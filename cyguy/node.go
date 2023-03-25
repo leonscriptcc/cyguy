@@ -59,7 +59,7 @@ func (n *Node) SetProperties(obj any) *Node {
 			return n
 		}
 
-		if k != t.NumField() {
+		if k != t.NumField()-1 {
 			buf.WriteString(`,`)
 		}
 	}

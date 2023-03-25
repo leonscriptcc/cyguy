@@ -7,13 +7,13 @@ import (
 
 type Client struct {
 	Name   string `json:"name" cypher:"names"`
-	Gender int    `json:"gender" cypher:"gender"`
+	Gender string `json:"gender" cypher:"gender"`
 }
 
 func main() {
 	c := Client{
 		Name:   "莽夫贼",
-		Gender: 1,
+		Gender: "1",
 	}
 
 	cyGuy := cyguy.NewCypherGuy()
