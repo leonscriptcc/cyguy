@@ -11,7 +11,8 @@ import (
 func (c *CyGuy) Node(obj any) *Node {
 	v := reflect.ValueOf(obj)
 	t := reflect.TypeOf(obj)
-	method := v.MethodByName("NodeInfo")
+	method := v.Method(0)
+
 	if !method.IsValid() {
 		return &Node{err: errors.New("unable to get method：func NodeInfo()(string,string)")}
 	}
@@ -43,9 +44,8 @@ func (n *Node) setProperties(obj any) *Node {
 	buf := bytes.NewBufferString(`{`)
 
 	var (
-		tag       string
-		kind      reflect.Kind
-		filedName string
+		tag  string
+		kind reflect.Kind
 	)
 
 	for k := 0; k < n.t.NumField(); k++ {
@@ -59,20 +59,19 @@ func (n *Node) setProperties(obj any) *Node {
 		buf.WriteString(":")
 
 		// 提取字段名称、类型
-		filedName = n.t.Field(k).Name
-		kind = n.v.FieldByName(filedName).Kind()
+		kind = n.v.Field(k).Kind()
 
 		// 获取字段的类型，根据不同的类型配置不同的样式
 		if kind >= reflect.Int && kind <= reflect.Uint64 {
-			buf.WriteString(fmt.Sprintf("%d", n.v.FieldByName(filedName).Int()))
+			buf.WriteString(fmt.Sprintf("%d", n.v.Field(k).Int()))
 		} else if kind >= reflect.Float32 && kind <= reflect.Float64 {
-			buf.WriteString(fmt.Sprintf("%f", n.v.FieldByName(filedName).Float()))
+			buf.WriteString(fmt.Sprintf("%f", n.v.Field(k).Float()))
 		} else if kind == reflect.String {
 			buf.WriteString(`"`)
-			buf.WriteString(n.v.FieldByName(filedName).String())
+			buf.WriteString(n.v.Field(k).String())
 			buf.WriteString(`"`)
 		} else {
-			n.err = errors.New("illegal filed kind:" + filedName)
+			n.err = errors.New("illegal filed kind:" + n.t.Field(k).Name)
 			return n
 		}
 
