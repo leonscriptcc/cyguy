@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"strings"
 )
@@ -34,9 +33,16 @@ func (n *Node) SetProperties(obj any) *Node {
 
 	v := reflect.ValueOf(obj)
 	buf := bytes.NewBufferString(`{`)
+
+	var (
+		tag       string
+		kind      reflect.Kind
+		filedName string
+	)
+
 	for k := 0; k < t.NumField(); k++ {
 		// 获取标签名
-		tag := t.Field(k).Tag.Get("cypher")
+		tag = t.Field(k).Tag.Get("cypher")
 		// 设置key
 		if tag == "" {
 			tag = t.Field(k).Name
@@ -44,18 +50,21 @@ func (n *Node) SetProperties(obj any) *Node {
 		buf.WriteString(tag)
 		buf.WriteString(":")
 
+		// 提取字段名称、类型
+		filedName = t.Field(k).Name
+		kind = v.FieldByName(t.Field(k).Name).Kind()
+
 		// 获取字段的类型，根据不同的类型配置不同的样式
-		if v.FieldByName(t.Field(k).Name).Kind() >= reflect.Int &&
-			v.FieldByName(t.Field(k).Name).Kind() <= reflect.Float64 {
-			//TODO 细化数字类型转化
-			log.Println(fmt.Sprintf("%d", v.FieldByName(t.Field(k).Name).Int()))
-			buf.WriteString(v.FieldByName(t.Field(k).Name).String())
-		} else if v.FieldByName(t.Field(k).Name).Kind() == reflect.String {
+		if kind >= reflect.Int && kind <= reflect.Uint64 {
+			buf.WriteString(fmt.Sprintf("%d", v.FieldByName(filedName).Int()))
+		} else if kind >= reflect.Float32 && kind <= reflect.Float64 {
+			buf.WriteString(fmt.Sprintf("%f", v.FieldByName(filedName).Float()))
+		} else if kind == reflect.String {
 			buf.WriteString(`"`)
-			buf.WriteString(v.FieldByName(t.Field(k).Name).String())
+			buf.WriteString(v.FieldByName(filedName).String())
 			buf.WriteString(`"`)
 		} else {
-			n.err = errors.New("illegal filed kind:" + t.Field(k).Name)
+			n.err = errors.New("illegal filed kind:" + filedName)
 			return n
 		}
 

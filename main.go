@@ -17,6 +17,5 @@ func main() {
 	}
 
 	cyGuy := cyguy.NewCypherGuy()
-	log.Println(cyGuy.Node("person", "client", "foo").
-		SetProperties(c).Create())
+	log.Println(cyGuy.Node("person", "client", "foo").SetProperties(c).Create())
 }
