@@ -10,6 +10,10 @@ type Client struct {
 	Gender string `json:"gender" cypher:"gender"`
 }
 
+func (c Client) NodeInfo() (string, string) {
+	return "Person", "Client:Test"
+}
+
 func main() {
 	c := Client{
 		Name:   "莽夫贼",
@@ -17,5 +21,9 @@ func main() {
 	}
 
 	cyGuy := cyguy.NewCypherGuy()
-	log.Println(cyGuy.Node("person", "client", "foo").SetProperties(c).Create())
+	cql, err := cyGuy.Node(c).Create()
+	if err != nil {
+		log.Panic(err)
+	}
+	log.Println(cql)
 }
