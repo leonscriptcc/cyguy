@@ -8,79 +8,25 @@ import (
 )
 
 // Node 创建节点
-func (c *CyGuy) Node(obj any) *Node {
-	v := reflect.ValueOf(obj)
-	t := reflect.TypeOf(obj)
-	method := v.Method(0)
-
-	if !method.IsValid() {
-		return &Node{err: errors.New("unable to get method：func NodeInfo()(string,string)")}
-	}
-	results := method.Call([]reflect.Value{})
+func (c *CyGuy) Node(name, labels string) *Node {
 	//log.Println(results[1].Len())
-	node := Node{name: results[0].String(), label: results[1].String(), v: v, t: t}
-	return node.setProperties(node)
+	node := Node{name: name, label: labels}
+	return &node
 
 }
 
 // Node 节点
 type Node struct {
 	obj        any
-	t          reflect.Type
-	v          reflect.Value
 	name       string
 	label      string
 	properties string
 	err        error
 }
 
-// setProperties 设置节点属性
-func (n *Node) setProperties(obj any) *Node {
-	if n.t.Kind() != reflect.Struct {
-		n.err = errors.New("properties is not Struct")
-		return n
-	}
-
-	buf := bytes.NewBufferString(`{`)
-
-	var (
-		tag  string
-		kind reflect.Kind
-	)
-
-	for k := 0; k < n.t.NumField(); k++ {
-		// 获取标签名
-		tag = n.t.Field(k).Tag.Get("cypher")
-		// 设置key
-		if tag == "" {
-			tag = n.t.Field(k).Name
-		}
-		buf.WriteString(tag)
-		buf.WriteString(":")
-
-		// 提取字段名称、类型
-		kind = n.v.Field(k).Kind()
-
-		// 获取字段的类型，根据不同的类型配置不同的样式
-		if kind >= reflect.Int && kind <= reflect.Uint64 {
-			buf.WriteString(fmt.Sprintf("%d", n.v.Field(k).Int()))
-		} else if kind >= reflect.Float32 && kind <= reflect.Float64 {
-			buf.WriteString(fmt.Sprintf("%f", n.v.Field(k).Float()))
-		} else if kind == reflect.String {
-			buf.WriteString(`"`)
-			buf.WriteString(n.v.Field(k).String())
-			buf.WriteString(`"`)
-		} else {
-			n.err = errors.New("illegal filed kind:" + n.t.Field(k).Name)
-			return n
-		}
-
-		if k != n.t.NumField()-1 {
-			buf.WriteString(`,`)
-		}
-	}
-	buf.WriteString(`}`)
-	n.properties = buf.String()
+// Properties 设置节点属性
+func (n *Node) Properties(obj any) *Node {
+	n.properties, n.err = n.getProperties(obj)
 	return n
 }
 
@@ -90,26 +36,100 @@ func (n *Node) Create() (result string, err error) {
 		return result, err
 	}
 
-	// 没有属性直接返回
-	if n.properties == "" {
-		return fmt.Sprintf(`%s(%s:%s) RETURN %s`, CREATE, n.name, n.label, n.name), err
-	}
+	return fmt.Sprintf(`%s(%s:%s%s) %s %s`, CREATE, n.name, n.label, n.properties, RETURN, n.name), err
 
-	// 有属性就拼接上属性
-	return fmt.Sprintf(`%s(%s:%s%s) RETURN %s`, CREATE, n.name, n.label, n.properties, n.name), err
 }
 
 // Delete 删除节点
-func (n *Node) Delete() (result string) {
-	return result
+func (n *Node) Delete() (result string, err error) {
+	if n.err != nil {
+		return result, err
+	}
+
+	return fmt.Sprintf(`%s(%s:%s%s) %s %s`, MATCH, n.name, n.label, n.properties, DELETE, n.name), err
 }
 
 // DetachDelete 删除节点以及节点的关系
-func (n *Node) DetachDelete() (result string) {
-	return result
+func (n *Node) DetachDelete() (result string, err error) {
+	if n.err != nil {
+		return result, err
+	}
+
+	return fmt.Sprintf(`%s(%s:%s%s) %s %s %s`, MATCH, n.name, n.label, n.properties, DELETE, DETACH, n.name), nil
 }
 
-// Update 更新节点
-func (n *Node) Update() (result string) {
-	return result
+// SetLabels 更新标签
+func (n *Node) SetLabels(labels string) (result string, err error) {
+	if n.err != nil {
+		return result, err
+	}
+
+	return fmt.Sprintf(`%s(%s:%s%s) %s %s:%s %s %s:%s`,
+		MATCH, n.name, n.label, n.properties, REMOVE, n.name, n.label, SET, n.name, labels), err
+}
+
+// SetProperties 更新属性
+func (n *Node) SetProperties(obj any) (result string, err error) {
+	if n.err != nil {
+		return result, err
+	}
+	// 获取等待更新的obj
+	ps, err := n.getProperties(obj)
+	if err != nil {
+		return result, err
+	}
+	return fmt.Sprintf(`%s(%s:%s%s) %s %s=%s`, MATCH, n.name, n.label, n.properties, SET, n.name, ps), err
+}
+
+// getProperties 解析属性
+func (n *Node) getProperties(obj any) (string, error) {
+	v := reflect.ValueOf(obj)
+	t := reflect.TypeOf(obj)
+	if t.Kind() != reflect.Struct {
+		return "", errors.New("properties is not Struct")
+	}
+
+	buf := bytes.NewBufferString(`{`)
+
+	var (
+		tag  string
+		kind reflect.Kind
+	)
+
+	for k := 0; k < t.NumField(); k++ {
+		// 获取标签名
+		tag = t.Field(k).Tag.Get("cypher")
+		// 忽略的字段
+		if tag == "-" {
+			continue
+		}
+		// 设置key
+		if tag == "" {
+			tag = t.Field(k).Name
+		}
+		buf.WriteString(tag)
+		buf.WriteString(":")
+
+		// 提取字段名称、类型
+		kind = v.Field(k).Kind()
+
+		// 获取字段的类型，根据不同的类型配置不同的样式
+		if kind >= reflect.Int && kind <= reflect.Uint64 {
+			buf.WriteString(fmt.Sprintf("%d", v.Field(k).Int()))
+		} else if kind >= reflect.Float32 && kind <= reflect.Float64 {
+			buf.WriteString(fmt.Sprintf("%f", v.Field(k).Float()))
+		} else if kind == reflect.String {
+			buf.WriteString(`"`)
+			buf.WriteString(v.Field(k).String())
+			buf.WriteString(`"`)
+		} else {
+			return "", errors.New("illegal filed kind:" + t.Field(k).Name)
+		}
+
+		if k != t.NumField()-1 {
+			buf.WriteString(`,`)
+		}
+	}
+	buf.WriteString(`}`)
+	return buf.String(), nil
 }
