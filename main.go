@@ -17,7 +17,7 @@ func main() {
 	}
 
 	cyGuy := cyguy.NewCypherGuy()
-	cql, err := cyGuy.Node("Person", "Client:Test").Properties(c).Create()
+	cql, err := cyGuy.Node("Person", "Client:Test").Properties(c).DetachDelete()
 	if err != nil {
 		log.Panic(err)
 	}
