@@ -1,5 +1,6 @@
 package cyguy
 
+// CQL
 const (
 	CREATE = "CREATE"
 	MATCH  = "MATCH"
@@ -9,3 +10,6 @@ const (
 	DETACH = "DETACH"
 	SET    = "SET"
 )
+
+// 封装error
+const ()
