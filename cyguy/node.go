@@ -18,18 +18,18 @@ func (c *CyGuy) Node(name, labels string) *Node {
 
 // Node 节点
 type Node struct {
-	obj   any
-	name  string
-	label string
-	info  string
-	err   error
+	obj        any
+	name       string
+	label      string
+	properties string
+	info       string
+	err        error
 }
 
 // Properties 设置节点属性
 func (n *Node) Properties(obj any) *Node {
-	var properties string
-	properties, n.err = getProperties(obj)
-	n.info = fmt.Sprintf("%s%s", n.info, properties)
+	n.properties, n.err = getProperties(obj)
+	n.info = fmt.Sprintf("%s%s", n.info, n.properties)
 	return n
 }
 

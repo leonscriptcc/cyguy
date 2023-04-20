@@ -1,6 +1,8 @@
 package cyguy
 
-import "errors"
+import (
+	"fmt"
+)
 
 // Matcher 创建关系
 func (c *CyGuy) Matcher() *Matcher {
@@ -15,15 +17,13 @@ type Matcher struct {
 
 // Nodes 根据node的属性查询节点
 func (m *Matcher) Nodes(node *Node) {
-	// 搜索的话节点不会有name
-	if node.name != "" {
-		m.err = errors.New("")
-		return
-	}
-
+	// 生成查询语句
+	m.result = []byte(fmt.Sprintf("%s(n:%s %s) %s n",
+		MATCH, node.label, node.properties, RETURN))
 }
 
 // Node 多跳查询-设置节点
+// MATCH (n)-[:rel3]->(m) RETURN n
 func (m *Matcher) Node(node *Node) {
 
 }
@@ -39,6 +39,6 @@ func (m *Matcher) What() {
 }
 
 // Find 生成查询语句
-func (m *Matcher) Find() {
-
+func (m *Matcher) Find() string {
+	return string(m.result)
 }
