@@ -5,7 +5,7 @@ import (
 )
 
 // Node 创建节点
-func (c *CyGuy) Node(name, labels string) *Node {
+func (c *CypherGuy) Node(name, labels string) *Node {
 	//log.Println(results[1].Len())
 	node := Node{
 		name:  name,

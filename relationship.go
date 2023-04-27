@@ -6,7 +6,7 @@ import (
 )
 
 // Relationship 创建关系
-func (c *CyGuy) Relationship(name, labels string) *Relationship {
+func (c *CypherGuy) Relationship(name, labels string) *Relationship {
 	relationship := Relationship{
 		name:  name,
 		label: labels,

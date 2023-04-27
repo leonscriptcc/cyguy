@@ -1,11 +1,12 @@
 package cyguy
 
 import (
+	"errors"
 	"fmt"
 )
 
 // Matcher 创建关系
-func (c *CyGuy) Matcher() *Matcher {
+func (c *CypherGuy) Matcher() *Matcher {
 	return &Matcher{}
 }
 
@@ -22,20 +23,20 @@ func (m *Matcher) Nodes(node *Node) {
 		MATCH, node.label, node.properties, RETURN))
 }
 
-// Node 多跳查询-设置节点
+// MultiJumps 多跳查询-设置节点
 // MATCH (n)-[:rel3]->(m) RETURN n
-func (m *Matcher) Node(node *Node) {
+func (m *Matcher) MultiJumps(fromNode *Node, relationship Relationship, toNode *Node) *Matcher {
+	if fromNode == nil && toNode == nil {
+		m.err = errors.New("")
+		return m
+	}
 
-}
+	if fromNode == nil {
 
-// To 多跳查询-设置关系
-func (m *Matcher) To(relationship *Relationship) {
+	} else if toNode == nil {
 
-}
-
-// What 多跳查询-设置查询项
-func (m *Matcher) What() {
-
+	}
+	return m
 }
 
 // Find 生成查询语句
